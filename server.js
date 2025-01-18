@@ -1,4 +1,4 @@
-require("dotenv").config({ path: "./config.env" });
+require("dotenv").config({ path: "./.env" });
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
@@ -20,14 +20,16 @@ app.use(
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-      mongoUrl: process.env.MONGODB_URI,
+      mongoUrl:
+        "mongodb+srv://hasnainmakada:hasnain123@cluster0.x0x9i.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
       ttl: 24 * 60 * 60,
       crypto: {
-        secret: process.env.SESSION_SECRET,
+        secret:
+          "5d35c4cf8923cce689a3a11087ad0ce65512c7b821810813b6611c8dfc42875dfe7fd41c411c6d81261b981846f688fabb35bf11cf8b59324d14b878c7f5b5b6",
       },
     }),
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      secure: "development" === "production",
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
       sameSite: "strict",
