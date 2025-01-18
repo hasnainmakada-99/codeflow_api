@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>YouTube Resources Form</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f9f9f9;
+      }
+      h1 {
+        color: #cc181e; /* YouTube Red */
+        text-align: center;
+      }
+      form {
+        width: 500px;
+        margin: 0 auto;
+        background-color: white;
+        padding: 25px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      form div {
+        margin-bottom: 15px;
+      }
+      form div label {
+        display: block;
+        margin-bottom: 5px;
+        color: #333;
+      }
+      form div input,
+      form div textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        font-size: 14px;
+      }
+      form button {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        background-color: #cc181e; /* YouTube Red */
+        color: white;
+        border: none;
+        text-align: center;
+        text-decoration: none;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 3px;
+      }
+      form button:hover {
+        background-color: #a3141a; /* Darker YouTube Red */
+      }
+    </style>
+  </head>
+  <script src="./validation.js"></script>
+  <!-- <link rel="stylesheet" href="./style.css" /> -->
+  <body>
+    <h1>YouTube Resources Form</h1>
+    <form action="/api/post-resources" method="POST">
+      <div>
+        <label for="title">Resource Title Name</label>
+        <input type="text" id="title" name="title" required />
+      </div>
+      <div>
+        <label for="url">Resource URL</label>
+        <input type="url" id="url" name="url" required />
+      </div>
+      <div>
+        <label for="description">Resource Description</label>
+        <textarea id="description" name="description" required></textarea>
+      </div>
+      <div>
+        <label for="price">Enter price in ₹</label>
+        <input type="number" id="price" name="price" required />
+      </div>
+      <div>
+        <label for="thumbnail">Resource Thumbnail Link</label>
+        <input type="url" id="thumbnail" name="thumbnail" required />
+      </div>
+      <div>
+        <label for="publishedDate">Resource Published Date</label>
+        <input type="date" id="publishedDate" name="publishedDate" required />
+      </div>
+      <div>
+        <label for="channelName">Resource Channel Name</label>
+        <input type="text" id="channelName" name="channelName" required />
+      </div>
+      <div>
+        <label for="toolRelatedTo">Tool Related To</label>
+        <input type="text" id="toolRelatedTo" name="toolRelatedTo" required />
+      </div>
+      <button type="submit">Submit</button>
+    </form>
+    <form action="/api/logout" method="POST">
+      <button type="submit">Logout</button>
+    </form>
+  </body>
+</html>
