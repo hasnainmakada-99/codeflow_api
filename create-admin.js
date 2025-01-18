@@ -4,7 +4,9 @@ const Admin = require("./src/models/admin");
 
 async function createAdmin() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect(
+      "mongodb+srv://hasnainmakada:hasnain123@cluster0.x0x9i.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+    );
 
     // Generate a random password
     const generatePassword = () => {
