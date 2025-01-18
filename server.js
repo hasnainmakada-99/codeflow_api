@@ -16,7 +16,8 @@ app.use(express.static("public"));
 // Session configuration
 app.use(
   session({
-    secret: process.env.SESSION_SECRET,
+    secret:
+      "5d35c4cf8923cce689a3a11087ad0ce65512c7b821810813b6611c8dfc42875dfe7fd41c411c6d81261b981846f688fabb35bf11cf8b59324d14b878c7f5b5b6",
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
