@@ -136,7 +136,7 @@ app.post("/api/post-resources", isAuthenticated, async (req, res) => {
   }
 });
 
-app.get("/api/get-resources", isAuthenticated, async (req, res) => {
+app.get("/api/get-resources", async (req, res) => {
   try {
     const resources = await Resource.find();
     res.json(resources);
