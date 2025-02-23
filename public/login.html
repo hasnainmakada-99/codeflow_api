@@ -3,11 +3,178 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Login</title>
-    <link rel="stylesheet" href="css/styles.css" />
+    <title>Admin Login - CodeFlow</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", Arial, sans-serif;
+      }
+
+      body {
+        background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+      }
+
+      .login-container {
+        background: rgba(255, 255, 255, 0.97);
+        padding: clamp(1.5rem, 4vw, 2.5rem);
+        border-radius: 20px;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+        width: 100%;
+        max-width: 420px;
+        animation: slideUp 0.6s ease-out;
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .logo-wrapper {
+        text-align: center;
+        margin-bottom: clamp(1rem, 3vw, 1.5rem);
+      }
+
+      .logo-wrapper img {
+        width: clamp(80px, 20vw, 120px);
+        height: auto;
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+      }
+
+      h2 {
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: clamp(1.5rem, 3vw, 2rem);
+        font-size: clamp(1.6rem, 5vw, 2.2rem);
+        font-weight: 700;
+        letter-spacing: 0.5px;
+      }
+
+      .form-group {
+        margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
+        position: relative;
+      }
+
+      label {
+        display: block;
+        color: #34495e;
+        font-size: clamp(0.85rem, 2vw, 0.95rem);
+        margin-bottom: 0.6rem;
+        font-weight: 500;
+      }
+
+      input {
+        width: 100%;
+        padding: clamp(0.7rem, 2vw, 0.9rem);
+        border: 2px solid #ecf0f1;
+        border-radius: 10px;
+        font-size: clamp(0.9rem, 2.5vw, 1rem);
+        background: #f9fbfc;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 6px rgba(52, 152, 219, 0.4);
+      }
+
+      button {
+        width: 100%;
+        padding: clamp(0.8rem, 2.5vw, 1rem);
+        background: linear-gradient(90deg, #3498db, #2980b9);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: clamp(1rem, 2.8vw, 1.1rem);
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s ease, transform 0.2s ease,
+          box-shadow 0.3s ease;
+      }
+
+      button:hover {
+        background: linear-gradient(90deg, #2980b9, #2471a3);
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+      }
+
+      button:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+      }
+
+      #message {
+        margin-top: clamp(0.8rem, 2vw, 1rem);
+        text-align: center;
+        color: #7f8c8d;
+        font-size: clamp(0.8rem, 2vw, 0.9rem);
+      }
+
+      /* Media Queries for Enhanced Responsiveness */
+      @media screen and (max-width: 480px) {
+        .login-container {
+          max-width: 90vw;
+          padding: 1.5rem;
+        }
+
+        h2 {
+          font-size: 1.6rem;
+        }
+
+        input,
+        button {
+          font-size: 0.9rem;
+        }
+
+        .logo-wrapper img {
+          width: 80px;
+        }
+      }
+
+      @media screen and (min-width: 481px) and (max-width: 768px) {
+        .login-container {
+          max-width: 70vw;
+        }
+
+        .logo-wrapper img {
+          width: 100px;
+        }
+      }
+
+      @media screen and (min-width: 769px) and (max-width: 1024px) {
+        .login-container {
+          max-width: 50vw;
+        }
+      }
+
+      @media screen and (min-width: 1025px) {
+        .login-container {
+          max-width: 420px;
+        }
+      }
+    </style>
   </head>
   <body>
     <div class="login-container">
+      <div class="logo-wrapper">
+        <img
+          src="https://ik.imagekit.io/1cw2zpbjy/Random/default.svg?updatedAt=1740331432698"
+          alt="CodeFlow Logo"
+        />
+      </div>
       <h2>Admin Login</h2>
       <form id="loginForm" onsubmit="return handleLogin(event)">
         <div class="form-group">

@@ -1,100 +1,233 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>YouTube Resources Form</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouTube Resources Form - CodeFlow</title>
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Roboto", Arial, sans-serif; /* YouTube uses Roboto */
+      }
+
       body {
-        font-family: Arial, sans-serif;
-        background-color: #f9f9f9;
+        background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: clamp(1rem, 3vw, 2rem);
       }
-      h1 {
-        color: #cc181e; /* YouTube Red */
+
+      .header-container {
         text-align: center;
+        margin-bottom: clamp(1.5rem, 3vw, 2rem);
       }
+
+      .logo-wrapper img {
+        width: clamp(80px, 20vw, 120px);
+        height: auto;
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+        margin-bottom: 1rem;
+      }
+
+      h1 {
+        color: #ffffff;
+        font-size: clamp(2rem, 6vw, 2.5rem);
+        font-weight: 700;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      }
+
       form {
-        width: 500px;
-        margin: 0 auto;
-        background-color: white;
-        padding: 25px;
-        border-radius: 5px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      }
-      form div {
-        margin-bottom: 15px;
-      }
-      form div label {
-        display: block;
-        margin-bottom: 5px;
-        color: #333;
-      }
-      form div input,
-      form div textarea {
         width: 100%;
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 3px;
-        font-size: 14px;
+        max-width: 620px;
+        background: rgba(255, 255, 255, 0.97);
+        padding: clamp(1.5rem, 4vw, 2.5rem);
+        border-radius: 20px;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+        animation: slideUp 0.6s ease-out;
       }
-      form button {
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .form-group {
+        margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
+        position: relative;
+      }
+
+      label {
         display: block;
+        color: #34495e;
+        font-size: clamp(0.9rem, 2vw, 1rem);
+        margin-bottom: 0.6rem;
+        font-weight: 500;
+      }
+
+      input,
+      textarea {
         width: 100%;
-        padding: 10px;
-        background-color: #cc181e; /* YouTube Red */
+        padding: clamp(0.8rem, 2vw, 0.9rem);
+        border: 2px solid #ecf0f1;
+        border-radius: 10px;
+        font-size: clamp(0.9rem, 2.5vw, 1rem);
+        background: #f9fbfc;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      input:focus,
+      textarea:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 6px rgba(52, 152, 219, 0.4);
+      }
+
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+
+      button {
+        width: 100%;
+        padding: clamp(0.9rem, 2.5vw, 1.1rem);
+        background: linear-gradient(90deg, #3498db, #2980b9);
         color: white;
         border: none;
-        text-align: center;
-        text-decoration: none;
-        font-size: 16px;
-        margin: 4px 2px;
+        border-radius: 10px;
+        font-size: clamp(1rem, 2.8vw, 1.1rem);
+        font-weight: 600;
         cursor: pointer;
-        border-radius: 3px;
+        transition: background 0.3s ease, transform 0.2s ease,
+          box-shadow 0.3s ease;
       }
-      form button:hover {
-        background-color: #a3141a; /* Darker YouTube Red */
+
+      button:hover {
+        background: linear-gradient(90deg, #2980b9, #2471a3);
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+      }
+
+      button:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+      }
+
+      .logout-form {
+        margin-top: 1rem;
+        width: 100%;
+        max-width: 620px;
+      }
+
+      .logout-form button {
+        background: linear-gradient(90deg, #95a5a6, #7f8c8d);
+      }
+
+      .logout-form button:hover {
+        background: linear-gradient(90deg, #7f8c8d, #6c7778);
+        box-shadow: 0 5px 15px rgba(149, 165, 166, 0.4);
+      }
+
+      /* Responsive Design */
+      @media screen and (max-width: 480px) {
+        form,
+        .logout-form {
+          max-width: 90vw;
+          padding: 1.5rem;
+        }
+
+        h1 {
+          font-size: 1.8rem;
+        }
+
+        .logo-wrapper img {
+          width: 80px;
+        }
+
+        input,
+        textarea,
+        button {
+          font-size: 0.9rem;
+        }
+      }
+
+      @media screen and (min-width: 481px) and (max-width: 768px) {
+        form,
+        .logout-form {
+          max-width: 80vw;
+        }
+
+        .logo-wrapper img {
+          width: 100px;
+        }
+      }
+
+      @media screen and (min-width: 769px) and (max-width: 1024px) {
+        form,
+        .logout-form {
+          max-width: 70vw;
+        }
+      }
+
+      @media screen and (min-width: 1025px) {
+        form,
+        .logout-form {
+          max-width: 620px;
+        }
       }
     </style>
   </head>
-  <script src="./validation.js"></script>
-  <!-- <link rel="stylesheet" href="./style.css" /> -->
   <body>
-    <h1>YouTube Resources Form</h1>
+    <div class="header-container">
+      <h1>CodFlow Resources Form</h1>
+    </div>
     <form action="/api/post-resources" method="POST">
-      <div>
+      <div class="form-group">
         <label for="title">Resource Title Name</label>
         <input type="text" id="title" name="title" required />
       </div>
-      <div>
+      <div class="form-group">
         <label for="url">Resource URL</label>
         <input type="url" id="url" name="url" required />
       </div>
-      <div>
+      <div class="form-group">
         <label for="description">Resource Description</label>
         <textarea id="description" name="description" required></textarea>
       </div>
-      <div>
+      <div class="form-group">
         <label for="price">Enter price in ₹</label>
         <input type="number" id="price" name="price" required />
       </div>
-      <div>
+      <div class="form-group">
         <label for="thumbnail">Resource Thumbnail Link</label>
         <input type="url" id="thumbnail" name="thumbnail" required />
       </div>
-      <div>
+      <div class="form-group">
         <label for="publishedDate">Resource Published Date</label>
         <input type="date" id="publishedDate" name="publishedDate" required />
       </div>
-      <div>
+      <div class="form-group">
         <label for="channelName">Resource Channel Name</label>
         <input type="text" id="channelName" name="channelName" required />
       </div>
-      <div>
+      <div class="form-group">
         <label for="toolRelatedTo">Tool Related To</label>
         <input type="text" id="toolRelatedTo" name="toolRelatedTo" required />
       </div>
       <button type="submit">Submit</button>
     </form>
-    <form action="/api/logout" method="POST">
+    <form class="logout-form" action="/api/logout" method="POST">
       <button type="submit">Logout</button>
     </form>
+    <script src="./validation.js"></script>
   </body>
 </html>
