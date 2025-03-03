@@ -1,4 +1,3 @@
-// require("dotenv").config({ path: "./.env" });
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
@@ -8,63 +7,136 @@ const path = require("path");
 const { isAuthenticated } = require("./src/middleware/auth");
 const app = express();
 
+// Environment variables
+const NODE_ENV = process.env.NODE_ENV || "development";
+const MONGODB_URI =
+  process.env.MONGODB_URI ||
+  "mongodb+srv://hasnainmakada:hasnain123@cluster0.x0x9i.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const SESSION_SECRET =
+  process.env.SESSION_SECRET ||
+  "5d35c4cf8923cce689a3a11087ad0ce65512c7b821810813b6611c8dfc42875dfe7fd41c411c6d81261b981846f688fabb35bf11cf8b59324d14b878c7f5b5b6";
+
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, "public")));
 
 // Session configuration
 app.use(
   session({
-    secret:
-      "5d35c4cf8923cce689a3a11087ad0ce65512c7b821810813b6611c8dfc42875dfe7fd41c411c6d81261b981846f688fabb35bf11cf8b59324d14b878c7f5b5b6",
+    secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-      mongoUrl:
-        "mongodb+srv://hasnainmakada:hasnain123@cluster0.x0x9i.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
+      mongoUrl: MONGODB_URI,
       ttl: 24 * 60 * 60,
       crypto: {
-        secret:
-          "5d35c4cf8923cce689a3a11087ad0ce65512c7b821810813b6611c8dfc42875dfe7fd41c411c6d81261b981846f688fabb35bf11cf8b59324d14b878c7f5b5b6",
+        secret: SESSION_SECRET,
       },
+      autoRemove: "native", // Default
+      touchAfter: 24 * 3600, // time period in seconds
     }),
     cookie: {
-      secure: "development" === "production",
+      secure: NODE_ENV === "production",
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
-      sameSite: "strict",
+      sameSite: NODE_ENV === "production" ? "none" : "strict",
     },
   })
 );
 
-// Database connection
-mongoose
-  .connect(
-    "mongodb+srv://hasnainmakada:hasnain123@cluster0.x0x9i.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
-    {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      ssl: true,
-    }
-  )
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error("MongoDB connection error:", err));
+// Ensure CORS is properly set for Render deployment
+app.use((req, res, next) => {
+  const allowedOrigins = [
+    "http://localhost:5000",
+    "https://codeflow-api.onrender.com",
+    // Add your Render domain here
+  ];
+
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, OPTIONS, PUT, DELETE"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "X-Requested-With,content-type"
+  );
+  res.setHeader("Access-Control-Allow-Credentials", true);
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
+
+// Database connection with retry logic
+const connectWithRetry = () => {
+  console.log("MongoDB connection with retry");
+  return mongoose.connect(MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
+};
+
+mongoose.connection.on("error", (err) => {
+  console.error("MongoDB connection error:", err);
+  console.log("Retrying in 5 seconds...");
+  setTimeout(connectWithRetry, 5000);
+});
+
+mongoose.connection.once("open", () => {
+  console.log("MongoDB connected successfully");
+});
+
+connectWithRetry();
 
 // Import models
 const Resource = require("./src/models/resource");
 const Admin = require("./src/models/admin");
 
+// Health check endpoint for Render
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok", environment: NODE_ENV });
+});
+
 // Routes
 app.get("/", isAuthenticated, (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "resource_fill.html"));
+  // Use try-catch to handle potential file system errors
+  try {
+    const filePath = path.join(__dirname, "public", "resource_fill.html");
+    if (!require("fs").existsSync(filePath)) {
+      console.error("File not found:", filePath);
+      return res.status(404).send("Resource file not found");
+    }
+    res.sendFile(filePath);
+  } catch (error) {
+    console.error("Error serving resource_fill.html:", error);
+    res.status(500).send("Server error when serving the file");
+  }
 });
 
 app.get("/login", (req, res) => {
   if (req.session.isAuthenticated) {
     res.redirect("/");
   } else {
-    res.sendFile(path.join(__dirname, "public", "login.html"));
+    // Use try-catch to handle potential file system errors
+    try {
+      const filePath = path.join(__dirname, "public", "login.html");
+      if (!require("fs").existsSync(filePath)) {
+        console.error("File not found:", filePath);
+        return res.status(404).send("Login file not found");
+      }
+      res.sendFile(filePath);
+    } catch (error) {
+      console.error("Error serving login.html:", error);
+      res.status(500).send("Server error when serving the file");
+    }
   }
 });
 
@@ -72,6 +144,12 @@ app.get("/login", (req, res) => {
 app.post("/api/login", async (req, res) => {
   try {
     const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res
+        .status(400)
+        .json({ message: "Username and password required" });
+    }
 
     if (req.session.loginAttempts && req.session.loginAttempts > 5) {
       const timeLeft = (req.session.lockUntil - Date.now()) / 1000;
@@ -92,7 +170,15 @@ app.post("/api/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const isValid = await admin.comparePassword(password);
+    // Use the comparePassword method if it exists, otherwise use bcrypt directly
+    let isValid;
+    if (typeof admin.comparePassword === "function") {
+      isValid = await admin.comparePassword(password);
+    } else {
+      const bcrypt = require("bcryptjs");
+      isValid = await bcrypt.compare(password, admin.password);
+    }
+
     if (!isValid) {
       incrementLoginAttempts(req);
       return res.status(401).json({ message: "Invalid credentials" });
@@ -103,10 +189,10 @@ app.post("/api/login", async (req, res) => {
     req.session.userAgent = req.headers["user-agent"];
     req.session.lastActivity = Date.now();
 
-    res.json({ message: "Login successful", redirect: "/" });
+    return res.json({ message: "Login successful", redirect: "/" });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Login error:", error);
+    return res.status(500).json({ message: "Server error during login" });
   }
 });
 
@@ -114,9 +200,11 @@ app.post("/api/login", async (req, res) => {
 app.post("/api/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) {
+      console.error("Logout error:", err);
       return res.status(500).json({ message: "Error logging out" });
     }
-    res.json({ message: "Logout successful" });
+    res.clearCookie("connect.sid"); // Clear the session cookie
+    return res.json({ message: "Logout successful" });
   });
 });
 
@@ -124,25 +212,27 @@ app.post("/api/logout", (req, res) => {
 app.post("/api/post-resources", isAuthenticated, async (req, res) => {
   try {
     const formData = req.body;
-    formData.toolRelatedTo =
-      formData.toolRelatedTo.charAt(0).toUpperCase() +
-      formData.toolRelatedTo.slice(1);
+    if (formData.toolRelatedTo) {
+      formData.toolRelatedTo =
+        formData.toolRelatedTo.charAt(0).toUpperCase() +
+        formData.toolRelatedTo.slice(1);
+    }
     const resource = new Resource(formData);
     await resource.save();
-    res.json({ message: "Resource posted successfully" });
+    return res.json({ message: "Resource posted successfully" });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error saving resource" });
+    console.error("Error saving resource:", error);
+    return res.status(500).json({ message: "Error saving resource" });
   }
 });
 
 app.get("/api/get-resources", async (req, res) => {
   try {
-    const resources = await Resource.find();
-    res.json(resources);
+    const resources = await Resource.find().sort({ createdAt: -1 });
+    return res.json(resources);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error fetching resources" });
+    console.error("Error fetching resources:", error);
+    return res.status(500).json({ message: "Error fetching resources" });
   }
 });
 
@@ -153,5 +243,29 @@ function incrementLoginAttempts(req) {
   }
 }
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  res.status(500).json({ message: "Internal server error" });
+});
+
+// Handle 404s
+app.use((req, res) => {
+  console.log(`404: ${req.method} ${req.path}`);
+  res.status(404).json({ message: "Route not found" });
+});
+
+// Start server
 const port = process.env.PORT || 5000;
-app.listen(port, () => console.log(`Server running on port ${port}`));
+app.listen(port, () => {
+  console.log(`Server running on port ${port} in ${NODE_ENV} mode`);
+});
+
+// Handle graceful shutdown
+process.on("SIGTERM", () => {
+  console.log("SIGTERM received, shutting down gracefully");
+  mongoose.connection.close(() => {
+    console.log("MongoDB connection closed");
+    process.exit(0);
+  });
+});
