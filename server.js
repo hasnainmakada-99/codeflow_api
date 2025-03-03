@@ -19,38 +19,12 @@ const SESSION_SECRET =
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, "public")));
-
-// Session configuration
-app.use(
-  session({
-    secret: SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-      mongoUrl: MONGODB_URI,
-      ttl: 24 * 60 * 60,
-      crypto: {
-        secret: SESSION_SECRET,
-      },
-      autoRemove: "native", // Default
-      touchAfter: 24 * 3600, // time period in seconds
-    }),
-    cookie: {
-      secure: NODE_ENV === "production",
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000,
-      sameSite: NODE_ENV === "production" ? "none" : "strict",
-    },
-  })
-);
 
 // Ensure CORS is properly set for Render deployment
 app.use((req, res, next) => {
   const allowedOrigins = [
     "http://localhost:5000",
     "https://codeflow-api.onrender.com",
-    // Add your Render domain here
   ];
 
   const origin = req.headers.origin;
@@ -74,6 +48,34 @@ app.use((req, res, next) => {
 
   next();
 });
+
+// Session configuration - FIXED for production
+app.use(
+  session({
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: MONGODB_URI,
+      ttl: 24 * 60 * 60,
+      crypto: {
+        secret: SESSION_SECRET,
+      },
+      autoRemove: "native",
+      touchAfter: 24 * 3600,
+    }),
+    cookie: {
+      secure: NODE_ENV === "production", // true in production
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      sameSite: NODE_ENV === "production" ? "none" : "strict", // Important for cross-site cookies
+    },
+    proxy: NODE_ENV === "production", // Trust the reverse proxy in production
+  })
+);
+
+// Static files - after session to ensure session is set up first
+app.use(express.static(path.join(__dirname, "public")));
 
 // Database connection with retry logic
 const connectWithRetry = () => {
@@ -102,47 +104,76 @@ const Admin = require("./src/models/admin");
 
 // Health check endpoint for Render
 app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok", environment: NODE_ENV });
+  res.status(200).json({
+    status: "ok",
+    environment: NODE_ENV,
+    authenticated: req.session.isAuthenticated || false,
+  });
+});
+
+// Debug endpoint
+app.get("/debug-session", (req, res) => {
+  res.json({
+    sessionID: req.sessionID,
+    isAuthenticated: req.session.isAuthenticated || false,
+    username: req.session.username || "none",
+    cookieSettings: app.get("trust proxy"),
+  });
 });
 
 // Routes
-app.get("/", isAuthenticated, (req, res) => {
+app.get(
+  "/",
+  (req, res, next) => {
+    console.log("/ route accessed, auth status:", req.session.isAuthenticated);
+    if (!req.session.isAuthenticated) {
+      return res.redirect("/login");
+    }
+    next();
+  },
+  (req, res) => {
+    // Use try-catch to handle potential file system errors
+    try {
+      const filePath = path.join(__dirname, "public", "resource_fill.html");
+      if (!require("fs").existsSync(filePath)) {
+        console.error("File not found:", filePath);
+        return res.status(404).send("Resource file not found");
+      }
+      res.sendFile(filePath);
+    } catch (error) {
+      console.error("Error serving resource_fill.html:", error);
+      res.status(500).send("Server error when serving the file");
+    }
+  }
+);
+
+app.get("/login", (req, res) => {
+  console.log(
+    "/login route accessed, auth status:",
+    req.session.isAuthenticated
+  );
+  if (req.session.isAuthenticated) {
+    return res.redirect("/");
+  }
+
   // Use try-catch to handle potential file system errors
   try {
-    const filePath = path.join(__dirname, "public", "resource_fill.html");
+    const filePath = path.join(__dirname, "public", "login.html");
     if (!require("fs").existsSync(filePath)) {
       console.error("File not found:", filePath);
-      return res.status(404).send("Resource file not found");
+      return res.status(404).send("Login file not found");
     }
     res.sendFile(filePath);
   } catch (error) {
-    console.error("Error serving resource_fill.html:", error);
+    console.error("Error serving login.html:", error);
     res.status(500).send("Server error when serving the file");
   }
 });
 
-app.get("/login", (req, res) => {
-  if (req.session.isAuthenticated) {
-    res.redirect("/");
-  } else {
-    // Use try-catch to handle potential file system errors
-    try {
-      const filePath = path.join(__dirname, "public", "login.html");
-      if (!require("fs").existsSync(filePath)) {
-        console.error("File not found:", filePath);
-        return res.status(404).send("Login file not found");
-      }
-      res.sendFile(filePath);
-    } catch (error) {
-      console.error("Error serving login.html:", error);
-      res.status(500).send("Server error when serving the file");
-    }
-  }
-});
-
-// Login route
+// Login route - FIXED
 app.post("/api/login", async (req, res) => {
   try {
+    console.log("Login attempt:", req.body.username);
     const { username, password } = req.body;
 
     if (!username || !password) {
@@ -184,20 +215,40 @@ app.post("/api/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    // Set session properties - IMPORTANT!
     req.session.isAuthenticated = true;
     req.session.username = admin.username;
     req.session.userAgent = req.headers["user-agent"];
     req.session.lastActivity = Date.now();
 
-    return res.json({ message: "Login successful", redirect: "/" });
+    // Save session explicitly before responding
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error:", err);
+        return res.status(500).json({ message: "Error saving session" });
+      }
+
+      console.log("Login successful for:", admin.username);
+      console.log("Session ID:", req.sessionID);
+      console.log("Auth status after login:", req.session.isAuthenticated);
+
+      return res.json({
+        message: "Login successful",
+        redirect: "/",
+        sessionID: req.sessionID,
+        authStatus: true,
+      });
+    });
   } catch (error) {
     console.error("Login error:", error);
     return res.status(500).json({ message: "Server error during login" });
   }
 });
 
-// Logout route
+// Logout route - FIXED
 app.post("/api/logout", (req, res) => {
+  console.log("Logout attempt for:", req.session.username);
+
   req.session.destroy((err) => {
     if (err) {
       console.error("Logout error:", err);
@@ -241,6 +292,12 @@ function incrementLoginAttempts(req) {
   if (req.session.loginAttempts >= 5) {
     req.session.lockUntil = Date.now() + 15 * 60 * 1000; // 15 minutes lock
   }
+}
+
+// CRITICAL: Trust the proxy when running in production (such as on Render)
+if (NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+  console.log("Trust proxy enabled for production");
 }
 
 // Error handling middleware
