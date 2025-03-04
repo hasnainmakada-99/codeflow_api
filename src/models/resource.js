@@ -15,6 +15,10 @@ const resourceSchema = new mongoose.Schema(
     publishedDate: String,
     channelName: String,
     toolRelatedTo: String,
+    isPaid: {
+      type: Boolean,
+      default: false,
+    },
     price: String,
   },
   {

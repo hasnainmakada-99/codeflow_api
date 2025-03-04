@@ -268,6 +268,15 @@ app.post("/api/post-resources", isAuthenticated, async (req, res) => {
         formData.toolRelatedTo.charAt(0).toUpperCase() +
         formData.toolRelatedTo.slice(1);
     }
+
+    // Convert the checkbox value to boolean
+    formData.isPaid = formData.isPaid === "on" || formData.isPaid === true;
+
+    // Only include price if isPaid is true
+    if (!formData.isPaid) {
+      formData.price = "";
+    }
+
     const resource = new Resource(formData);
     await resource.save();
     return res.json({ message: "Resource posted successfully" });
@@ -276,7 +285,6 @@ app.post("/api/post-resources", isAuthenticated, async (req, res) => {
     return res.status(500).json({ message: "Error saving resource" });
   }
 });
-
 app.get("/api/get-resources", async (req, res) => {
   try {
     const resources = await Resource.find().sort({ createdAt: -1 });

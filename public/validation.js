@@ -1,41 +1,68 @@
-document
-  .getElementById("resourceForm")
-  .addEventListener("submit", function (event) {
-    event.preventDefault();
+function validateForm() {
+  const title = document.getElementById("title").value;
+  const url = document.getElementById("url").value;
+  const description = document.getElementById("description").value;
+  const thumbnail = document.getElementById("thumbnail").value;
+  const publishedDate = document.getElementById("publishedDate").value;
+  const channelName = document.getElementById("channelName").value;
+  const toolRelatedTo = document.getElementById("toolRelatedTo").value;
+  const isPaid = document.getElementById("isPaid").checked;
+  const price = document.getElementById("price").value;
 
-    var title = document.getElementById("title").value;
-    var url = document.getElementById("url").value;
-    var description = document.getElementById("description").value;
-    var thumbnail = document.getElementById("thumbnail").value;
-    var publishedDate = document.getElementById("publishedDate").value;
-    var channelName = document.getElementById("channelName").value;
-    var toolRelatedTo = document.getElementById("toolRelatedTo").value;
+  // Check required fields
+  if (
+    !title ||
+    !url ||
+    !description ||
+    !thumbnail ||
+    !publishedDate ||
+    !channelName ||
+    !toolRelatedTo
+  ) {
+    showError("All fields are required");
+    return false;
+  }
 
-    if (
-      !title ||
-      !url ||
-      !description ||
-      !thumbnail ||
-      !publishedDate ||
-      !channelName ||
-      !toolRelatedTo
-    ) {
-      alert("All fields are required.");
-      return;
+  // Check URL format
+  const urlRegex = /^(ftp|http|https):\/\/[^ "]+$/;
+  if (!urlRegex.test(url) || !urlRegex.test(thumbnail)) {
+    showError("Please enter valid URLs");
+    return false;
+  }
+
+  // Check date is not in future
+  if (new Date(publishedDate) > new Date()) {
+    showError("Published date cannot be in the future");
+    return false;
+  }
+
+  // Check price if it's a paid resource
+  if (isPaid) {
+    if (!price || isNaN(price) || parseFloat(price) < 0) {
+      showError("Please enter a valid price for the paid resource");
+      return false;
     }
+  }
 
-    var urlRegex = /^(ftp|http|https):\/\/[^ "]+$/;
-    if (!urlRegex.test(url) || !urlRegex.test(thumbnail)) {
-      alert("Please enter valid URLs.");
-      return;
-    }
+  return true;
+}
 
-    var currentDate = new Date();
-    var inputDate = new Date(publishedDate);
-    if (inputDate > currentDate) {
-      alert("Published date cannot be in the future.");
-      return;
-    }
+function showError(message) {
+  const messageDiv = document.getElementById("message");
+  messageDiv.textContent = message;
+  messageDiv.style.display = "block";
+  messageDiv.style.backgroundColor = "#f8d7da";
+  messageDiv.style.color = "#721c24";
+}
 
-    this.submit();
-  });
+// Attach validation to form submit
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.querySelector("form");
+  if (form) {
+    form.addEventListener("submit", function (event) {
+      if (!validateForm()) {
+        event.preventDefault();
+      }
+    });
+  }
+});
