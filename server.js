@@ -176,52 +176,38 @@ app.post("/api/login", async (req, res) => {
     console.log("Login attempt:", req.body.username);
     const { username, password } = req.body;
 
+    // Validate input
     if (!username || !password) {
       return res
         .status(400)
-        .json({ message: "Username and password required" });
+        .json({ message: "Username and password are required" });
     }
 
-    if (req.session.loginAttempts && req.session.loginAttempts > 5) {
-      const timeLeft = (req.session.lockUntil - Date.now()) / 1000;
-      if (timeLeft > 0) {
-        return res.status(429).json({
-          message: `Too many attempts. Try again in ${Math.ceil(
-            timeLeft
-          )} seconds`,
-        });
-      }
-      req.session.loginAttempts = 0;
-      req.session.lockUntil = null;
-    }
-
+    // Find admin user
     const admin = await Admin.findOne({ username });
     if (!admin) {
-      incrementLoginAttempts(req);
+      console.log("No admin user found with username:", username);
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Use the comparePassword method if it exists, otherwise use bcrypt directly
-    let isValid;
-    if (typeof admin.comparePassword === "function") {
-      isValid = await admin.comparePassword(password);
-    } else {
-      const bcrypt = require("bcryptjs");
-      isValid = await bcrypt.compare(password, admin.password);
-    }
-
-    if (!isValid) {
-      incrementLoginAttempts(req);
+    // Compare passwords
+    const isValidPassword = await admin.comparePassword(password);
+    if (!isValidPassword) {
+      console.log("Invalid password for username:", username);
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Set session properties - IMPORTANT!
+    // Set session properties
     req.session.isAuthenticated = true;
     req.session.username = admin.username;
     req.session.userAgent = req.headers["user-agent"];
     req.session.lastActivity = Date.now();
 
-    // Save session explicitly before responding
+    // Update last login time
+    admin.lastLogin = new Date();
+    await admin.save();
+
+    // Save session explicitly
     req.session.save((err) => {
       if (err) {
         console.error("Session save error:", err);
@@ -229,9 +215,6 @@ app.post("/api/login", async (req, res) => {
       }
 
       console.log("Login successful for:", admin.username);
-      console.log("Session ID:", req.sessionID);
-      console.log("Auth status after login:", req.session.isAuthenticated);
-
       return res.json({
         message: "Login successful",
         redirect: "/",
@@ -243,20 +226,6 @@ app.post("/api/login", async (req, res) => {
     console.error("Login error:", error);
     return res.status(500).json({ message: "Server error during login" });
   }
-});
-
-// Logout route - FIXED
-app.post("/api/logout", (req, res) => {
-  console.log("Logout attempt for:", req.session.username);
-
-  req.session.destroy((err) => {
-    if (err) {
-      console.error("Logout error:", err);
-      return res.status(500).json({ message: "Error logging out" });
-    }
-    res.clearCookie("connect.sid"); // Clear the session cookie
-    return res.json({ message: "Logout successful" });
-  });
 });
 
 // Resource routes

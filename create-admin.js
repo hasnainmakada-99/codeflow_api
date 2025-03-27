@@ -22,11 +22,11 @@ async function createAdmin() {
     };
 
     const plainPassword = generatePassword();
-    const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
+    // Create a new admin instance and let the pre-save hook handle hashing
     const admin = new Admin({
       username: "admin",
-      password: hashedPassword,
+      password: plainPassword, // Pass plain password, model will hash it
     });
 
     await admin.save();

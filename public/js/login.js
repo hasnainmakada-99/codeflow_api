@@ -12,7 +12,7 @@ async function handleLogin(event) {
     const formData = new FormData(form);
     const loginData = Object.fromEntries(formData);
 
-    console.log("Login attempt initiated");
+    console.log("Login attempt initiated for:", loginData.username);
 
     const response = await fetch("/api/login", {
       method: "POST",
@@ -40,6 +40,7 @@ async function handleLogin(event) {
     } else {
       messageDiv.textContent = data.message || "Login failed";
       messageDiv.style.color = "red";
+      console.error("Login failed:", data.message);
     }
   } catch (error) {
     console.error("Login error:", error);
